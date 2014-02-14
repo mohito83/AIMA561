@@ -1,0 +1,14 @@
+Kevin,Frank,96
+Frank,Jenny,39
+Claire,Mark,25
+Claire,Ian,41
+Alice,Lena,95
+Alice,Dan,123
+Lena,Gil,272
+Dan,Ben,73
+Dan,Helen,44
+Helen,Gil,67
+Gil,Ben,59
+Gil,Noah,109
+Emma,Ben,54
+Emma,Noah,21
