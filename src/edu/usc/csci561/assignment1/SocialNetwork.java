@@ -108,11 +108,99 @@ public class SocialNetwork {
 
 	}
 
+	/**
+	 * This method performs the DFS on the graph
+	 * 
+	 * @param startNode2
+	 * @param goalNode2
+	 * @param opBuffWriter
+	 * @param olBuffWriter
+	 * @throws IOException
+	 */
 	private static void performDFS(String startNode2, String goalNode2,
-			BufferedWriter opBuffWriter, BufferedWriter olBuffWriter) {
+			BufferedWriter opBuffWriter, BufferedWriter olBuffWriter)
+			throws IOException {
 
+		Node start = null;
+		Iterator iter = nodes.keySet().iterator();
+		while (iter.hasNext()) {
+			Node n = (Node) iter.next();
+			if (n.getName().equals(startNode2)) {
+				start = n;
+				break;
+			}
+		}
+		start.setDistance(0);
+		start.setParent(null);
+		start.setState(State.GREY);
+		Stack pathbuff = new Stack();
+		processDFSVisit(start, olBuffWriter, pathbuff, goalNode2);
+		pathbuff.push(start);
+
+		// print the path to the output file
+		while (!pathbuff.isEmpty()) {
+			opBuffWriter.write(((Node) pathbuff.pop()).getName());
+			opBuffWriter.newLine();
+		}
 	}
 
+	/**
+	 * This method processes the DFS visit of the nodes in the graphs
+	 * 
+	 * @param u
+	 * @param v
+	 * @param olBuffWriter
+	 * @param opBuffWriter
+	 * @param goalNode2
+	 * @throws IOException
+	 * 
+	 */
+	public static boolean processDFSVisit(Node u, BufferedWriter olBuffWriter,
+			Stack pathBuff, String goalNode2) throws IOException {
+		boolean found = false;
+		u.setState(State.GREY);
+		olBuffWriter.write(u.getName() + "," + u.getDepth() + ","
+				+ u.getDistance());
+		olBuffWriter.newLine();
+		List children = (ArrayList) nodes.get(u);
+		Iterator iter = children.iterator();
+		while (iter.hasNext()) {
+			Node v = (Node) iter.next();
+			if (v.getState() == State.WHITE) {
+				double cost = getEdgeCost(u, v) + u.getDistance();
+				v.setDistance(cost);
+				v.setDepth(v.getDepth() + u.getDepth() + 1);
+				v.setParent(u);
+				if (v.getName().equals(goalNode2)) {
+					pathBuff.push(v);
+					olBuffWriter.write(v.getName() + "," + v.getDepth() + ","
+							+ v.getDistance());
+					olBuffWriter.newLine();
+					olBuffWriter.flush();
+					found = true;
+					return found;
+				}
+				found = processDFSVisit(v, olBuffWriter, pathBuff, goalNode2);
+				if (found){
+					pathBuff.push(v);
+					return found;
+				}
+			}
+		}
+		u.setState(State.BLACK);
+
+		return found;
+	}
+
+	/**
+	 * This method performs the BFS on the graph
+	 * 
+	 * @param startNode2
+	 * @param goalNode2
+	 * @param opBuffWriter
+	 * @param olBuffWriter
+	 * @throws IOException
+	 */
 	private static void performBFS(String startNode2, String goalNode2,
 			BufferedWriter opBuffWriter, BufferedWriter olBuffWriter)
 			throws IOException {
