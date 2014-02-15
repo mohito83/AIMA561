@@ -9,10 +9,10 @@ package edu.usc.csci561.assignment1.data;
  */
 public class Edge {
 
-	private String a, b;
+	private Node a, b;
 	private double cost;
 
-	public Edge(String a, String b, double cost) {
+	public Edge(Node a, Node b, double cost) {
 		this.a = a;
 		this.b = b;
 		this.cost = cost;
@@ -21,14 +21,14 @@ public class Edge {
 	/**
 	 * @return the a
 	 */
-	public String getA() {
+	public Node getA() {
 		return a;
 	}
 
 	/**
 	 * @return the b
 	 */
-	public String getB() {
+	public Node getB() {
 		return b;
 	}
 
@@ -45,7 +45,10 @@ public class Edge {
 	 * @param p
 	 * @return
 	 */
-	public boolean isTuple(Person p) {
-		return p.equals(a) || p.equals(b);
+	public boolean isTuple(Node p, Node q) {
+		return (p.getName().equals(a.getName()) || p.getName().equals(
+				b.getName()))
+				&& (q.getName().equals(a.getName()) || q.getName().equals(
+						b.getName()));
 	}
 }
