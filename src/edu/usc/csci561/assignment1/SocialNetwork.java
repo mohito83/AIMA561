@@ -12,6 +12,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -157,7 +158,102 @@ public class SocialNetwork {
 	}
 
 	private static void performUCS(String startNode2, String goalNode2,
-			BufferedWriter opBuffWriter, BufferedWriter olBuffWriter) {
+			BufferedWriter opBuffWriter, BufferedWriter olBuffWriter)
+			throws IOException {
+
+		Node start = null;
+		Iterator iter = nodes.keySet().iterator();
+		while (iter.hasNext()) {
+			Node n = (Node) iter.next();
+			if (n.getName().equals(startNode2)) {
+				start = n;
+				break;
+			}
+		}
+		start.setDistance(0);
+		start.setParent(null);
+		start.setState(State.GREY);
+		/*
+		 * olBuffWriter.write(start.getName() + "," + start.getDepth() + "," +
+		 * start.getDistance()); olBuffWriter.newLine();
+		 */
+
+		boolean breakLoop = false;
+		Node breakNode = null;
+		LinkedList queue = new LinkedList();
+		queue.addLast(start);
+		while (!queue.isEmpty() && !breakLoop) {
+			final Node u = (Node) queue.removeFirst();
+			olBuffWriter.write(u.getName() + "," + u.getDepth() + ","
+					+ u.getDistance());
+			olBuffWriter.newLine();
+			if (u.getName().equals(goalNode2)) {
+				breakLoop = true;
+				breakNode = u;
+				break;
+			}
+			List children = (ArrayList) nodes.get(u);
+			/*
+			 * Collections.sort(children, new Comparator() {
+			 * 
+			 * public int compare(Object o1, Object o2) { int diff = (int)
+			 * (getEdgeCost(u, (Node) o1) - getEdgeCost( u, (Node) o2)); if
+			 * (diff == 0) { return ((Node) o1).getName().compareTo( ((Node)
+			 * o2).getName()); } else { return diff; } } });
+			 */
+
+			for (int i = 0; i < children.size(); i++) {
+				Node v = (Node) children.get(i);
+				if (v.getState() != State.BLACK) {
+					v.setState(State.GREY);
+					double cost = getEdgeCost(u, v) + u.getDistance();
+					if (cost > v.getDistance()) {
+						v.setState(State.BLACK);
+						continue;
+					}
+					v.setDistance(cost);
+					v.setDepth(v.getDepth() + u.getDepth() + 1);
+					v.setParent(u);
+					/*
+					 * olBuffWriter.write(v.getName() + "," + v.getDepth() + ","
+					 * + v.getDistance()); olBuffWriter.newLine();
+					 */
+					/*
+					 * if (v.getName().equals(goalNode2)) { breakLoop = true;
+					 * breakNode = v; break; }
+					 */
+					queue.addLast(v);
+				}
+			}
+
+			Collections.sort(queue, new Comparator() {
+
+				public int compare(Object o1, Object o2) {
+					double diff = ((Node) o1).getDistance()
+							- ((Node) o2).getDistance();
+					if (diff == 0) {
+						return ((Node) o1).getName().compareTo(
+								((Node) o2).getName());
+					} else {
+						return (int) diff;
+					}
+				}
+			});
+			u.setState(State.BLACK);
+		}
+
+		// print the path in the output file
+		Stack s = new Stack();
+		while (breakNode != null) {
+			s.push(breakNode);
+			breakNode = (Node) breakNode.getParent();
+		}
+
+		Node tmp = null;
+		while (s.size() > 0 && (tmp = (Node) s.pop()) != null) {
+			opBuffWriter.write(tmp.getName());
+			opBuffWriter.newLine();
+		}
 
 	}
 
