@@ -62,9 +62,6 @@ public class SocialNetwork {
 					outputPathFile)));
 			olWriter = new BufferedWriter(new FileWriter(
 					new File(outputLogFile)));
-			olWriter.write("name,depth,cost");
-			olWriter.newLine();
-			olWriter.flush();
 		} catch (IOException e) {
 			System.out.println("Error while creating output files!! - ("
 					+ e.getMessage() + " ). Exiting application!!");
@@ -74,18 +71,30 @@ public class SocialNetwork {
 		try {
 			switch (task) {
 			case 1:
+				olWriter.write("name,depth,cost");
+				olWriter.newLine();
+				olWriter.flush();
 				performBFS(startNode, goalNode, opWriter, olWriter);
 				break;
 
 			case 2:
+				olWriter.write("name,depth,cost");
+				olWriter.newLine();
+				olWriter.flush();
 				performDFS(startNode, goalNode, opWriter, olWriter);
 				break;
 
 			case 3:
+				olWriter.write("name,depth,cost");
+				olWriter.newLine();
+				olWriter.flush();
 				performUCS(startNode, goalNode, opWriter, olWriter);
 				break;
 
 			case 4:
+				olWriter.write("name,depth,group");
+				olWriter.newLine();
+				olWriter.flush();
 				findConnectedComponents(opWriter, olWriter);
 				break;
 			}
@@ -99,8 +108,52 @@ public class SocialNetwork {
 	}
 
 	private static void findConnectedComponents(BufferedWriter opBuffWriter,
-			BufferedWriter olBuffWriter) {
+			BufferedWriter olBuffWriter) throws IOException {
+		Iterator iter = nodes.keySet().iterator();
+		int group = 1;
+		while (iter.hasNext()) {
+			Node u = (Node) iter.next();
+			if (u.getState() == State.WHITE) {
+				Stack pathbuff = new Stack();
+				processDFSVisit2(u, olBuffWriter, group, pathbuff);
+				pathbuff.push(u);
 
+				// print the path
+				while (!pathbuff.isEmpty()) {
+					opBuffWriter.write(((Node) pathbuff.pop()).getName());
+					opBuffWriter.write(",");
+				}
+				opBuffWriter.newLine();
+				opBuffWriter.flush();
+
+				group++;
+				olBuffWriter
+						.write("-----------------------------------------------------------------");
+				olBuffWriter.newLine();
+				olBuffWriter.flush();
+			}
+		}
+	}
+
+	private static void processDFSVisit2(Node u, BufferedWriter olBuffWriter,
+			int group, Stack pathbuff) throws IOException {
+		u.setState(State.GREY);
+		olBuffWriter.write(u.getName() + "," + u.getDepth() + "," + group);
+		olBuffWriter.newLine();
+		List children = (ArrayList) nodes.get(u);
+		Iterator iter = children.iterator();
+		while (iter.hasNext()) {
+			Node v = (Node) iter.next();
+			if (v.getState() == State.WHITE) {
+				double cost = getEdgeCost(u, v) + u.getDistance();
+				v.setDistance(cost);
+				v.setDepth(v.getDepth() + u.getDepth() + 1);
+				v.setParent(u);
+				processDFSVisit2(v, olBuffWriter, group, pathbuff);
+				pathbuff.push(v);
+			}
+		}
+		u.setState(State.BLACK);
 	}
 
 	private static void performUCS(String startNode2, String goalNode2,
@@ -133,6 +186,7 @@ public class SocialNetwork {
 		start.setDistance(0);
 		start.setParent(null);
 		start.setState(State.GREY);
+
 		Stack pathbuff = new Stack();
 		processDFSVisit(start, olBuffWriter, pathbuff, goalNode2);
 		pathbuff.push(start);
@@ -181,7 +235,7 @@ public class SocialNetwork {
 					return found;
 				}
 				found = processDFSVisit(v, olBuffWriter, pathBuff, goalNode2);
-				if (found){
+				if (found) {
 					pathBuff.push(v);
 					return found;
 				}
