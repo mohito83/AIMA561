@@ -12,10 +12,8 @@ import java.io.LineNumberReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 
-import edu.usc.csci561.data.State;
 import edu.usc.csci561.data.TSPNode;
 
 /**
@@ -101,25 +99,17 @@ public class TravellingSalesMan {
 	 */
 	private static double heuresticFuncManhattanDist(TSPNode src, TSPNode dest) {
 		double distance = -1;
-		LinkedList q = new LinkedList();
-		src.setState(State.GREY);
-		q.addLast(src);
-
-		loop: while (!q.isEmpty()) {
-			TSPNode u = (TSPNode) q.removeFirst();
-			List nodes = u.getUnvisitedNodes();
-			for (int i = 0; i < nodes.size(); i++) {
-				TSPNode v = (TSPNode) nodes.get(i);
-				v.setState(State.GREY);
-				v.setHeuristic(v.getHeuristic() + u.getHeuristic());
-				if (v == dest) {
-					distance = v.getHeuristic();
-					break loop;
-				}
-				q.addLast(u);
-				u.setState(State.BLACK);
-			}
-		}
+		/*
+		 * LinkedList q = new LinkedList(); src.setState(State.GREY);
+		 * q.addLast(src);
+		 * 
+		 * loop: while (!q.isEmpty()) { TSPNode u = (TSPNode) q.removeFirst();
+		 * List nodes = u.getUnvisitedNodes(); for (int i = 0; i < nodes.size();
+		 * i++) { TSPNode v = (TSPNode) nodes.get(i); v.setState(State.GREY);
+		 * v.setHeuristic(v.getHeuristic() + u.getHeuristic()); if (v == dest) {
+		 * distance = v.getHeuristic(); break loop; } q.addLast(u);
+		 * u.setState(State.BLACK); } }
+		 */
 
 		return distance;
 	}
@@ -179,12 +169,12 @@ public class TravellingSalesMan {
 				}
 				if (val != 42) {
 					char c = (char) val;
-					grid[i][j] = new TSPNode(c+"");
+					grid[i][j] = new TSPNode(c + "");
 					if (val != 32) {
 						posts.add(grid[i][j]);
 					}
 				}
-				
+
 				j++;
 			}
 		} catch (FileNotFoundException e) {
