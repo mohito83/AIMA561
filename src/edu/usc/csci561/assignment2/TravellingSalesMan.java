@@ -169,7 +169,7 @@ public class TravellingSalesMan {
 				}
 				if (val != 42) {
 					char c = (char) val;
-					grid[i][j] = new TSPNode(c + "");
+					grid[i][j] = new TSPNode(c + "", i, j);
 					if (val != 32) {
 						posts.add(grid[i][j]);
 					}

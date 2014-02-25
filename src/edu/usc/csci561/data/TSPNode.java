@@ -142,4 +142,11 @@ public class TSPNode extends Node {
 	public void setHeuristic(double heuristic) {
 		this.heuristic = heuristic;
 	}
+
+	/**
+	 * @return the loc
+	 */
+	public Coordinate getLoc() {
+		return loc;
+	}
 }
