@@ -1,7 +1,7 @@
 /**
  * 
  */
-package edu.usc.csci561.assignment1;
+package edu.usc.csci561.data;
 
 /**
  * This class represents the attributes and behavior of a person in a social
@@ -12,10 +12,10 @@ package edu.usc.csci561.assignment1;
  */
 public class Node implements Comparable {
 
-	private String name;
-	private State state;
+	protected String name;
+	protected State state;
 	private Node parent;
-	private double distance;
+	protected double distance;
 	private int depth;
 
 	/**
@@ -28,6 +28,10 @@ public class Node implements Comparable {
 		this.parent = null;
 		this.distance = Double.POSITIVE_INFINITY;
 		this.depth = 0;
+	}
+	
+	public Node(){
+		super();
 	}
 
 	/**

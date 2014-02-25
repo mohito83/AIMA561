@@ -1,7 +1,7 @@
 /**
  * 
  */
-package edu.usc.csci561.assignment1;
+package edu.usc.csci561.data;
 
 /**
  * @author mohit aggarwl

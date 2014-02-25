@@ -21,6 +21,10 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.StringTokenizer;
 
+import edu.usc.csci561.data.Edge;
+import edu.usc.csci561.data.Node;
+import edu.usc.csci561.data.State;
+
 /**
  * This is the main class that presents a social network
  * 

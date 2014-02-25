@@ -1,4 +1,4 @@
-package edu.usc.csci561.assignment1;
+package edu.usc.csci561.data;
 
 /**
  * This class defines the state of the a Person as a node in the graph
