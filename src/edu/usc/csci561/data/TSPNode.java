@@ -18,6 +18,7 @@ public class TSPNode extends Node {
 	private double heuristic;
 	private double totalDistance;
 	private Coordinate loc;
+	private int precedence;
 
 	public TSPNode(String v) {
 		super(v);
@@ -27,7 +28,7 @@ public class TSPNode extends Node {
 		bottom = null;
 		heuristic = 0.0;
 		totalDistance = 0.0;
-		distance = 0.0;
+		// distance = 0.0;
 	}
 
 	public TSPNode(String v, int x, int y) {
@@ -36,21 +37,21 @@ public class TSPNode extends Node {
 	}
 
 	public String toString() {
-		return name + "";
+		return name + "(" + loc.getX() + "," + loc.getY() + ")";
 	}
 
 	public List getUnvisitedNodes() {
 		List nodes = new ArrayList();
-		if (left != null && left.state == State.WHITE) {
+		if (left != null && left.state != State.BLACK) {
 			nodes.add(left);
 		}
-		if (right != null && right.state == State.WHITE) {
+		if (right != null && right.state != State.BLACK) {
 			nodes.add(right);
 		}
-		if (top != null && top.state == State.WHITE) {
+		if (top != null && top.state != State.BLACK) {
 			nodes.add(top);
 		}
-		if (bottom != null && bottom.state == State.WHITE) {
+		if (bottom != null && bottom.state != State.BLACK) {
 			nodes.add(bottom);
 		}
 		return nodes;
@@ -61,6 +62,19 @@ public class TSPNode extends Node {
 	 */
 	public String getName() {
 		return name;
+	}
+
+	public boolean equals(Object p) {
+		if (p instanceof TSPNode) {
+			TSPNode n = (TSPNode) p;
+			if (name.trim().length() ==0 && n.getName().trim().length() == 0) {
+				return this == n;
+			} else {
+				return this.name.equals(((TSPNode) p).getName());
+			}
+		} else {
+			return false;
+		}
 	}
 
 	/**
@@ -175,9 +189,28 @@ public class TSPNode extends Node {
 	 * @return
 	 */
 	public int isHighPrecedence(TSPNode n2) {
-		if (this.loc.getX() < n2.loc.getX() || this.loc.getY() < n2.loc.getY())
-			return -1;
-		else
-			return 1;
+		/*
+		 * if (this.loc.getX() < n2.loc.getX() && this.loc.getY() <
+		 * n2.loc.getY()) return -1; else return 1;
+		 */
+		int p1 = getPrecedence();
+		int p2 = n2.getPrecedence();
+		return p1 - p2;
 	}
+
+	/**
+	 * @return the precedence
+	 */
+	public int getPrecedence() {
+		return precedence;
+	}
+
+	/**
+	 * @param precedence
+	 *            the precedence to set
+	 */
+	public void setPrecedence(int precedence) {
+		this.precedence = precedence;
+	}
+
 }

@@ -46,7 +46,7 @@ public class TravellingSalesMan {
 		public int compare(Object o1, Object o2) {
 			TSPNode n1 = (TSPNode) o1;
 			TSPNode n2 = (TSPNode) o2;
-			double d = n1.getTotalDistance() - n1.getTotalDistance();
+			double d = n1.getTotalDistance() - n2.getTotalDistance();
 			if (d == 0) {
 				// XXX resolve any conflict if present.
 				return n1.isHighPrecedence(n2);
@@ -129,6 +129,7 @@ public class TravellingSalesMan {
 	 */
 	private static void findShortestPath(TSPNode src, TSPNode dest)
 			throws IOException {
+
 		LinkedList q = new LinkedList();
 		q.addLast(src);
 		src.setState(State.GREY);
@@ -147,22 +148,54 @@ public class TravellingSalesMan {
 					+ u.getDistance() + "," + u.getHeuristic() + ","
 					+ u.getTotalDistance());
 			outputLog.write(System.getProperty("line.separator"));
+			if (u.getName().equals(dest.getName())) {
+				break;
+			}
 
 			for (int i = 0; i < nodes.size(); i++) {
 				TSPNode v = (TSPNode) nodes.get(i);
 				d = heuresticFuncManhattanDist(v, dest);
 				c = u.getDistance() + 1;
-				v.setDistance(c);
-				v.setDepth(u.getDepth() + 1);
-				v.setHeuristic(d);
-				v.setTotalDistance(c + d);
-				v.setState(State.GREY);
-				q.addLast(v);
+				if (c < v.getDistance()) {
+					v.setDistance(c);
+					v.setDepth(u.getDepth() + 1);
+					v.setHeuristic(d);
+					v.setTotalDistance(c + d);
+					v.setState(State.GREY);
+					if (!q.contains(v)) {
+						q.addLast(v);
+					}
+				}
 			}
 			u.setState(State.BLACK);
 
 			Collections.sort(q, totalCostComp);
 		}
+
+		/*
+		 * LinkedList open = new LinkedList(); LinkedList close = new
+		 * LinkedList();
+		 * 
+		 * src.setState(State.GREY); double d = heuresticFuncManhattanDist(src,
+		 * dest); double c = 0.0; src.setHeuristic(d); src.setTotalDistance(d);
+		 * src.setDepth(0); src.setDistance(c);
+		 * 
+		 * open.addLast(src);
+		 * 
+		 * while(!open.isEmpty()){ TSPNode u = (TSPNode) open.removeFirst();
+		 * 
+		 * outputLog.write(u.getLoc().getX() + "," + u.getLoc().getY() + "," +
+		 * u.getDistance() + "," + u.getHeuristic() + "," +
+		 * u.getTotalDistance());
+		 * outputLog.write(System.getProperty("line.separator")); if
+		 * (u.getName().equals(dest.getName())) { break; }
+		 * 
+		 * List nodes = u.getUnvisitedNodes(); for (int i = 0; i < nodes.size();
+		 * i++) {
+		 * 
+		 * } close.addLast(u); Collections.sort(open, totalCostComp); }
+		 */
+
 	}
 
 	/**
@@ -241,6 +274,7 @@ public class TravellingSalesMan {
 				if (val != 42) {
 					char c = (char) val;
 					grid[i][j] = new TSPNode(c + "", j, i);
+					grid[i][j].setPrecedence(calculatePrecedence(i, j, m, n));
 					if (val != 32) {
 						posts.add(grid[i][j]);
 					}
@@ -256,6 +290,26 @@ public class TravellingSalesMan {
 			System.out.println("Exception while reading the file. --- "
 					+ e.getMessage());
 		}
+	}
+
+	/**
+	 * This method calculates the precedence on a TSPNode based on its location
+	 * in the mXn maze.
+	 * 
+	 * @param j
+	 * @param i
+	 * @param m2
+	 * @param n2
+	 * @return
+	 */
+	private static int calculatePrecedence(int j, int i, int tRows, int tCols) {
+		int result = 0;
+		if (j % 2 == 0) {
+			result = j * tCols + i;
+		} else {
+			result = j * tCols + (tCols - i);
+		}
+		return result;
 	}
 
 	/**
