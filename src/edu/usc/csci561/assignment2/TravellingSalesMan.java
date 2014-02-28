@@ -12,8 +12,10 @@ import java.io.LineNumberReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 
+import edu.usc.csci561.data.State;
 import edu.usc.csci561.data.TSPNode;
 
 /**
@@ -39,12 +41,20 @@ public class TravellingSalesMan {
 		}
 	};
 
-	private static Comparator costComp = new Comparator() {
+	private static Comparator totalCostComp = new Comparator() {
 
 		public int compare(Object o1, Object o2) {
-			return (((TSPNode) o1).getDistance() - ((TSPNode) o2).getDistance()) == 0 ? 0
-					: (((TSPNode) o1).getDistance() - ((TSPNode) o2)
-							.getDistance()) < 0 ? -1 : 1;
+			TSPNode n1 = (TSPNode) o1;
+			TSPNode n2 = (TSPNode) o2;
+			double d = n1.getTotalDistance() - n1.getTotalDistance();
+			if (d == 0) {
+				// XXX resolve any conflict if present.
+				return n1.isHighPrecedence(n2);
+			} else if (d < 0) {
+				return -1;
+			} else {
+				return 1;
+			}
 		}
 	};
 
@@ -54,6 +64,15 @@ public class TravellingSalesMan {
 	public static void main(String[] args) {
 		// 1. parse the command line arguments
 		parseCommandline(args);
+
+		try {
+			outputPath = new FileWriter(new File(outputPathFile));
+			outputLog = new FileWriter(new File(outputLogFile));
+		} catch (IOException e) {
+			System.out
+					.println("Exception occurred while opening file writer on the output files - "
+							+ e.getMessage());
+		}
 
 		// 2. create the grid
 		parseInputFile(inputFile);
@@ -67,11 +86,38 @@ public class TravellingSalesMan {
 
 		for (int i = 0; i < posts.size() - 1; i++) {
 			for (int j = i + 1; j < posts.size(); j++) {
-				findShortestPath((TSPNode) posts.get(i), (TSPNode) posts.get(j));
+				TSPNode src = (TSPNode) posts.get(i);
+				TSPNode dest = (TSPNode) posts.get(j);
+				try {
+					outputLog.write("from \'" + src.getName() + "\' to \'"
+							+ dest.getName() + "\'");
+					outputLog.write(System.getProperty("line.separator"));
+					outputLog
+							.write("----------------------------------------------------------------");
+					outputLog.write(System.getProperty("line.separator"));
+					outputLog.write("x,y,g,h,f");
+					outputLog.write(System.getProperty("line.separator"));
+					findShortestPath(src, dest);
+					outputLog
+							.write("----------------------------------------------------------------");
+					outputLog.write(System.getProperty("line.separator"));
+				} catch (IOException e) {
+					System.out
+							.println("Exception while writing logs to the output file - "
+									+ e.getMessage());
+				}
 			}
 			resetGrid();
 		}
 
+		try {
+			outputLog.close();
+			outputPath.close();
+		} catch (IOException e) {
+			System.out
+					.println("Exception occurred while closing file writer - "
+							+ e.getMessage());
+		}
 	}
 
 	/**
@@ -79,9 +125,44 @@ public class TravellingSalesMan {
 	 * 
 	 * @param src
 	 * @param dest
+	 * @throws IOException
 	 */
-	private static void findShortestPath(TSPNode src, TSPNode dest) {
+	private static void findShortestPath(TSPNode src, TSPNode dest)
+			throws IOException {
+		LinkedList q = new LinkedList();
+		q.addLast(src);
+		src.setState(State.GREY);
+		double d = heuresticFuncManhattanDist(src, dest);
+		double c = 0.0;
+		src.setHeuristic(d);
+		src.setTotalDistance(d);
+		src.setDepth(0);
+		src.setDistance(c);
 
+		while (!q.isEmpty()) {
+			TSPNode u = (TSPNode) q.removeFirst();
+			List nodes = u.getUnvisitedNodes();
+
+			outputLog.write(u.getLoc().getX() + "," + u.getLoc().getY() + ","
+					+ u.getDistance() + "," + u.getHeuristic() + ","
+					+ u.getTotalDistance());
+			outputLog.write(System.getProperty("line.separator"));
+
+			for (int i = 0; i < nodes.size(); i++) {
+				TSPNode v = (TSPNode) nodes.get(i);
+				d = heuresticFuncManhattanDist(v, dest);
+				c = u.getDistance() + 1;
+				v.setDistance(c);
+				v.setDepth(u.getDepth() + 1);
+				v.setHeuristic(d);
+				v.setTotalDistance(c + d);
+				v.setState(State.GREY);
+				q.addLast(v);
+			}
+			u.setState(State.BLACK);
+
+			Collections.sort(q, totalCostComp);
+		}
 	}
 
 	/**
@@ -99,18 +180,8 @@ public class TravellingSalesMan {
 	 */
 	private static double heuresticFuncManhattanDist(TSPNode src, TSPNode dest) {
 		double distance = -1;
-		/*
-		 * LinkedList q = new LinkedList(); src.setState(State.GREY);
-		 * q.addLast(src);
-		 * 
-		 * loop: while (!q.isEmpty()) { TSPNode u = (TSPNode) q.removeFirst();
-		 * List nodes = u.getUnvisitedNodes(); for (int i = 0; i < nodes.size();
-		 * i++) { TSPNode v = (TSPNode) nodes.get(i); v.setState(State.GREY);
-		 * v.setHeuristic(v.getHeuristic() + u.getHeuristic()); if (v == dest) {
-		 * distance = v.getHeuristic(); break loop; } q.addLast(u);
-		 * u.setState(State.BLACK); } }
-		 */
-
+		distance = Math.abs(src.getLoc().getX() - dest.getLoc().getX())
+				+ Math.abs(src.getLoc().getY() - dest.getLoc().getY());
 		return distance;
 	}
 
@@ -169,7 +240,7 @@ public class TravellingSalesMan {
 				}
 				if (val != 42) {
 					char c = (char) val;
-					grid[i][j] = new TSPNode(c + "", i, j);
+					grid[i][j] = new TSPNode(c + "", j, i);
 					if (val != 32) {
 						posts.add(grid[i][j]);
 					}
@@ -213,15 +284,6 @@ public class TravellingSalesMan {
 			} else if (tmp.equals("-ol")) {
 				outputLogFile = args[i++];
 			}
-		}
-
-		try {
-			outputPath = new FileWriter(new File(outputPathFile));
-			outputLog = new FileWriter(new File(outputLogFile));
-		} catch (IOException e) {
-			System.out
-					.println("Exception occurred while opening file writer on the output files - "
-							+ e.getMessage());
 		}
 
 		System.out.println("Test command line parsing logic\n");

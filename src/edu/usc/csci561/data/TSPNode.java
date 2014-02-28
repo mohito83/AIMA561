@@ -16,6 +16,7 @@ public class TSPNode extends Node {
 	private Node top;
 	private Node bottom;
 	private double heuristic;
+	private double totalDistance;
 	private Coordinate loc;
 
 	public TSPNode(String v) {
@@ -25,11 +26,13 @@ public class TSPNode extends Node {
 		top = null;
 		bottom = null;
 		heuristic = 0.0;
+		totalDistance = 0.0;
+		distance = 0.0;
 	}
-	
-	public TSPNode(String v, int x,int y){
+
+	public TSPNode(String v, int x, int y) {
 		this(v);
-		loc = new Coordinate(x,y);
+		loc = new Coordinate(x, y);
 	}
 
 	public String toString() {
@@ -148,5 +151,33 @@ public class TSPNode extends Node {
 	 */
 	public Coordinate getLoc() {
 		return loc;
+	}
+
+	/**
+	 * @return the totalDistance
+	 */
+	public double getTotalDistance() {
+		return totalDistance;
+	}
+
+	/**
+	 * @param totalDistance
+	 *            the totalDistance to set
+	 */
+	public void setTotalDistance(double totalDistance) {
+		this.totalDistance = totalDistance;
+	}
+
+	/**
+	 * Resolves the precedence
+	 * 
+	 * @param n2
+	 * @return
+	 */
+	public int isHighPrecedence(TSPNode n2) {
+		if (this.loc.getX() < n2.loc.getX() || this.loc.getY() < n2.loc.getY())
+			return -1;
+		else
+			return 1;
 	}
 }
