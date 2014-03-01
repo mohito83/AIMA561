@@ -179,10 +179,12 @@ public class TravellingSalesMan {
 		src.setTotalDistance(src.getDistance() + state.getH());
 
 		double cost = 0.0, d = 0.0;
+		TSPNode tmp = null;
 
 		while (!q.isEmpty()) {
 			TSPNode u = (TSPNode) q.removeFirst();
 			u.setMSTVisited(true);
+			tmp = u;
 
 			outputLog.write(getTour(u) + "," + u.getDistance() + ","
 					+ u.getHeuristic() + "," + u.getTotalDistance());
@@ -213,6 +215,15 @@ public class TravellingSalesMan {
 
 			Collections.sort(q, totalCostComp);
 		}
+
+		outputLog.write(getTour(tmp) + src.getName() + ","
+				+ (tmp.getDistance() + tmp.getHeuristic()) + ",0.0" + ","
+				+ tmp.getTotalDistance());
+		outputLog.write(System.getProperty("line.separator"));
+		outputPath.write(src.getName());
+		outputPath.write(System.getProperty("line.separator"));
+		outputPath.write("Total Tour Cost: " + tmp.getTotalDistance());
+		outputPath.write(System.getProperty("line.separator"));
 	}
 
 	/**
