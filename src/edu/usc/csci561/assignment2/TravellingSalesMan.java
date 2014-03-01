@@ -177,13 +177,13 @@ public class TravellingSalesMan {
 
 		while (!q.isEmpty()) {
 			TSPNode u = (TSPNode) q.removeFirst();
-			
-			MSTState state = new MSTState(src);
-			heuresticFuncMST(state, src);
-			src.setMSTVisited(true);
-			src.setHeuristic(state.getH());
-			src.setTotalDistance(src.getDistance() + state.getH());
-			tour.append(src.getName());
+
+			MSTState state = new MSTState(u);
+			heuresticFuncMST(state, u);
+			u.setMSTVisited(true);
+			u.setHeuristic(state.getH());
+			u.setTotalDistance(u.getDistance() + state.getH());
+			tour.append(u.getName());
 
 			outputLog.write(tour.toString() + "," + u.getDistance() + ","
 					+ u.getHeuristic() + "," + u.getTotalDistance());
@@ -191,7 +191,6 @@ public class TravellingSalesMan {
 			outputPath.write(u.getName());
 			outputPath.write(System.getProperty("line.separator"));
 
-			visited.add(u);
 			resetEdges();
 			Map unvisited = u.getUnvisitedMSTNodes();
 
@@ -203,7 +202,7 @@ public class TravellingSalesMan {
 				heuresticFuncMST(state, src);
 				key.setMSTVisited(true);
 				key.setHeuristic(state.getH());
-				key.setDistance(d+u.getDistance());
+				key.setDistance(d + u.getDistance());
 				key.setTotalDistance(key.getDistance() + state.getH());
 				q.addLast(key);
 			}
@@ -320,25 +319,16 @@ public class TravellingSalesMan {
 	 * @return
 	 */
 	private static void heuresticFuncMST(MSTState state, TSPNode start) {
-
-		// TSPNode node = state.getCurrent();
-		List visited = state.getVisitedNodes();
 		List unVisited = new ArrayList();
 
 		// find unvisited nodes
 		Iterator iter = posts.iterator();
 		while (iter.hasNext()) {
 			TSPNode n = (TSPNode) iter.next();
-			Iterator iter2 = visited.iterator();
-			while (iter2.hasNext()) {
-				TSPNode p = (TSPNode) iter2.next();
-				if (n != p) {
-					unVisited.add(n);
-				}
+			if (!n.isMSTVisited()) {
+				unVisited.add(n);
 			}
-			unVisited.add(n);
 		}
-		// unVisited.add(node); //unVisited.remove(start);
 
 		List vNew = new ArrayList();
 		double h = 0.0;
