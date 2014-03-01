@@ -12,9 +12,13 @@ import java.io.LineNumberReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
+import edu.usc.csci561.data.Edge;
+import edu.usc.csci561.data.MSTState;
 import edu.usc.csci561.data.State;
 import edu.usc.csci561.data.TSPNode;
 
@@ -33,6 +37,8 @@ public class TravellingSalesMan {
 
 	private static FileWriter outputPath;
 	private static FileWriter outputLog;
+	
+	private static List edges = new ArrayList();
 
 	private static Comparator nameComp = new Comparator() {
 
@@ -89,25 +95,47 @@ public class TravellingSalesMan {
 				TSPNode src = (TSPNode) posts.get(i);
 				TSPNode dest = (TSPNode) posts.get(j);
 				try {
-					outputLog.write("from \'" + src.getName() + "\' to \'"
-							+ dest.getName() + "\'");
-					outputLog.write(System.getProperty("line.separator"));
-					outputLog
-							.write("----------------------------------------------------------------");
-					outputLog.write(System.getProperty("line.separator"));
-					outputLog.write("x,y,g,h,f");
-					outputLog.write(System.getProperty("line.separator"));
+					if (task == 1) {
+						outputLog.write("from \'" + src.getName() + "\' to \'"
+								+ dest.getName() + "\'");
+						outputLog.write(System.getProperty("line.separator"));
+						outputLog
+								.write("----------------------------------------------------------------");
+						outputLog.write(System.getProperty("line.separator"));
+						outputLog.write("x,y,g,h,f");
+						outputLog.write(System.getProperty("line.separator"));
+					}
 					findShortestPath(src, dest);
-					outputLog
-							.write("----------------------------------------------------------------");
-					outputLog.write(System.getProperty("line.separator"));
+					if (task == 1) {
+						outputLog
+								.write("----------------------------------------------------------------");
+						outputLog.write(System.getProperty("line.separator"));
+					}
+
+					// populate the Graph
+					src.addChild(dest, dest.getDistance());
+					dest.addChild(src, dest.getDistance());
+					edges.add(new Edge(src,dest, dest.getDistance()));
+
+					// reset the grid
+					resetGrid();
 				} catch (IOException e) {
 					System.out
 							.println("Exception while writing logs to the output file - "
 									+ e.getMessage());
 				}
 			}
-			resetGrid();
+		}
+
+		// 5. Find the Minimum Spanning Tree
+		if (task == 2) {
+			try {
+				solveTSP((TSPNode) posts.get(0));
+			} catch (IOException e) {
+				System.out
+						.println("Exception occured while solving the TSP with MST as heuristics. - "
+								+ e.getMessage());
+			}
 		}
 
 		try {
@@ -117,6 +145,43 @@ public class TravellingSalesMan {
 			System.out
 					.println("Exception occurred while closing file writer - "
 							+ e.getMessage());
+		}
+	}
+
+	/**
+	 * This method the traveling sales man problem
+	 * 
+	 * @param object
+	 * @throws IOException
+	 */
+	private static void solveTSP(TSPNode src) throws IOException {
+
+		LinkedList q = new LinkedList();
+		List visited = new ArrayList();
+
+		src.setDistance(0.0);
+		src.setState(State.GREY);
+		q.addLast(src);
+		StringBuffer tour = new StringBuffer();
+
+		while (!q.isEmpty()) {
+			TSPNode u = (TSPNode) q.removeFirst();
+			MSTState state = new MSTState(u);
+			state.setVisitedNodes(visited);
+			
+			heuresticFuncMST(state, src);
+			u.setMSTVisited(true);
+			
+			tour.append(u.getName());
+
+			outputLog.write(tour.toString() + "," + u.getDistance() + ","
+					+ u.getHeuristic() + "," + u.getTotalDistance());
+			outputLog.write(System.getProperty("line.separator"));
+			outputPath.write(u.getName());
+			outputPath.write(System.getProperty("line.separator"));
+			
+			
+			
 		}
 	}
 
@@ -133,7 +198,7 @@ public class TravellingSalesMan {
 		LinkedList q = new LinkedList();
 		q.addLast(src);
 		src.setState(State.GREY);
-		double d = heuresticFuncManhattanDist(src, dest);
+		double d = heuristicFuncManhattanDist(src, dest);
 		double c = 0.0;
 		src.setHeuristic(d);
 		src.setTotalDistance(d);
@@ -144,17 +209,20 @@ public class TravellingSalesMan {
 			TSPNode u = (TSPNode) q.removeFirst();
 			List nodes = u.getUnvisitedNodes();
 
-			outputLog.write(u.getLoc().getX() + "," + u.getLoc().getY() + ","
-					+ u.getDistance() + "," + u.getHeuristic() + ","
-					+ u.getTotalDistance());
-			outputLog.write(System.getProperty("line.separator"));
+			if (task == 1) {
+				outputLog.write(u.getLoc().getX() + "," + u.getLoc().getY()
+						+ "," + u.getDistance() + "," + u.getHeuristic() + ","
+						+ u.getTotalDistance());
+				outputLog.write(System.getProperty("line.separator"));
+			}
+
 			if (u.getName().equals(dest.getName())) {
 				break;
 			}
 
 			for (int i = 0; i < nodes.size(); i++) {
 				TSPNode v = (TSPNode) nodes.get(i);
-				d = heuresticFuncManhattanDist(v, dest);
+				d = heuristicFuncManhattanDist(v, dest);
 				c = u.getDistance() + 1;
 				if (c < v.getDistance()) {
 					v.setDistance(c);
@@ -172,29 +240,11 @@ public class TravellingSalesMan {
 			Collections.sort(q, totalCostComp);
 		}
 
-		/*
-		 * LinkedList open = new LinkedList(); LinkedList close = new
-		 * LinkedList();
-		 * 
-		 * src.setState(State.GREY); double d = heuresticFuncManhattanDist(src,
-		 * dest); double c = 0.0; src.setHeuristic(d); src.setTotalDistance(d);
-		 * src.setDepth(0); src.setDistance(c);
-		 * 
-		 * open.addLast(src);
-		 * 
-		 * while(!open.isEmpty()){ TSPNode u = (TSPNode) open.removeFirst();
-		 * 
-		 * outputLog.write(u.getLoc().getX() + "," + u.getLoc().getY() + "," +
-		 * u.getDistance() + "," + u.getHeuristic() + "," +
-		 * u.getTotalDistance());
-		 * outputLog.write(System.getProperty("line.separator")); if
-		 * (u.getName().equals(dest.getName())) { break; }
-		 * 
-		 * List nodes = u.getUnvisitedNodes(); for (int i = 0; i < nodes.size();
-		 * i++) {
-		 * 
-		 * } close.addLast(u); Collections.sort(open, totalCostComp); }
-		 */
+		if (task == 1) {
+			outputPath.write(src.getName() + "," + dest.getName() + ","
+					+ dest.getDistance());
+			outputPath.write(System.getProperty("line.separator"));
+		}
 
 	}
 
@@ -202,7 +252,17 @@ public class TravellingSalesMan {
 	 * This method resets the heuristic values.
 	 */
 	private static void resetGrid() {
-
+		for (int i = 0; i < grid.length; i++) {
+			for (int j = 0; j < grid[0].length; j++) {
+				if (grid[i][j] != null) {
+					grid[i][j].setDepth(0);
+					grid[i][j].setState(State.WHITE);
+					grid[i][j].setDistance(Double.POSITIVE_INFINITY);
+					grid[i][j].setHeuristic(0.0);
+					grid[i][j].setTotalDistance(0.0);
+				}
+			}
+		}
 	}
 
 	/**
@@ -211,11 +271,72 @@ public class TravellingSalesMan {
 	 * @param n
 	 * @return
 	 */
-	private static double heuresticFuncManhattanDist(TSPNode src, TSPNode dest) {
+	private static double heuristicFuncManhattanDist(TSPNode src, TSPNode dest) {
 		double distance = -1;
 		distance = Math.abs(src.getLoc().getX() - dest.getLoc().getX())
 				+ Math.abs(src.getLoc().getY() - dest.getLoc().getY());
 		return distance;
+	}
+
+	/**
+	 * calculates the MST heuristic.
+	 * 
+	 * @param state
+	 * @return
+	 */
+	private static double heuresticFuncMST(MSTState state, TSPNode start) {
+		//TSPNode node = state.getCurrent();
+		List visited = state.getVisitedNodes();
+		List unVisited = new ArrayList();
+
+		// find unvisited nodes
+		Iterator iter = posts.iterator();
+		while (iter.hasNext()) {
+			TSPNode n = (TSPNode) iter.next();
+			Iterator iter2 = visited.iterator();
+			while (iter2.hasNext()) {
+				TSPNode p = (TSPNode) iter2.next();
+				if (n != p) {
+					unVisited.add(n);
+				}
+			}
+			unVisited.add(n);
+		}
+		//unVisited.add(node);
+		//unVisited.remove(start);
+
+		List vNew = new ArrayList();
+		double h = 0.0;
+		int i = 0;
+		vNew.add(start);
+
+		while (vNew.size() != unVisited.size()) {
+			TSPNode u = (TSPNode) vNew.get(i);
+			Map nodes = u.getUnvisitedMSTNodes();
+
+			double d = Double.POSITIVE_INFINITY;
+			TSPNode x = null;
+			iter = nodes.keySet().iterator();
+			while (iter.hasNext()) {
+				TSPNode nx = (TSPNode) iter.next();
+				if (!vNew.contains(nx)) {
+					Double val = (Double) nodes.get(nx);
+					if (val.doubleValue() < d) {
+						d = val.doubleValue();
+						x = nx;
+					}
+				}
+			}
+
+			h += d;
+			vNew.add(x);
+			i++;
+		}
+
+		state.setH(h);
+		System.out.println("State==>"+state.getH());
+
+		return 0.0;
 	}
 
 	/**

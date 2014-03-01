@@ -51,4 +51,8 @@ public class Edge {
 				&& (q.getName().equals(a.getName()) || q.getName().equals(
 						b.getName()));
 	}
+
+	public String toString() {
+		return "(" + a.getName() + ", " + b.getName() + ", " + cost + ")";
+	}
 }

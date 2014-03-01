@@ -4,7 +4,10 @@
 package edu.usc.csci561.data;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author mohit aggarwl
@@ -15,10 +18,12 @@ public class TSPNode extends Node {
 	private Node right;
 	private Node top;
 	private Node bottom;
+	private Map children;
 	private double heuristic;
 	private double totalDistance;
 	private Coordinate loc;
 	private int precedence;
+	private boolean isMSTVisited;
 
 	public TSPNode(String v) {
 		super(v);
@@ -28,7 +33,8 @@ public class TSPNode extends Node {
 		bottom = null;
 		heuristic = 0.0;
 		totalDistance = 0.0;
-		// distance = 0.0;
+		children = new HashMap();
+		isMSTVisited = false;
 	}
 
 	public TSPNode(String v, int x, int y) {
@@ -57,6 +63,18 @@ public class TSPNode extends Node {
 		return nodes;
 	}
 
+	public Map getUnvisitedMSTNodes() {
+		Map nodes = new HashMap();
+		Iterator iter = children.keySet().iterator();
+		while (iter.hasNext()) {
+			TSPNode n = (TSPNode) iter.next();
+			if (!n.isMSTVisited()) {
+				nodes.put(n, children.get(n));
+			}
+		}
+		return nodes;
+	}
+
 	/**
 	 * @return the name
 	 */
@@ -67,7 +85,7 @@ public class TSPNode extends Node {
 	public boolean equals(Object p) {
 		if (p instanceof TSPNode) {
 			TSPNode n = (TSPNode) p;
-			if (name.trim().length() ==0 && n.getName().trim().length() == 0) {
+			if (name.trim().length() == 0 && n.getName().trim().length() == 0) {
 				return this == n;
 			} else {
 				return this.name.equals(((TSPNode) p).getName());
@@ -213,4 +231,36 @@ public class TSPNode extends Node {
 		this.precedence = precedence;
 	}
 
+	/**
+	 * @return the children
+	 */
+	public Map getChildren() {
+		return children;
+	}
+
+	/**
+	 * Adds child to the children list
+	 * 
+	 * @param n
+	 * @param cost
+	 *            TODO
+	 */
+	public void addChild(TSPNode n, double cost) {
+		children.put(n, new Double(cost));
+	}
+
+	/**
+	 * @return the isMSTVisited
+	 */
+	public boolean isMSTVisited() {
+		return isMSTVisited;
+	}
+
+	/**
+	 * @param isMSTVisited
+	 *            the isMSTVisited to set
+	 */
+	public void setMSTVisited(boolean isMSTVisited) {
+		this.isMSTVisited = isMSTVisited;
+	}
 }
