@@ -17,6 +17,7 @@ public class Node implements Comparable {
 	private Node parent;
 	protected double distance;
 	private int depth;
+	private boolean isVisited;
 
 	/**
 	 * friendList contains the List of friends.
@@ -114,5 +115,19 @@ public class Node implements Comparable {
 	 */
 	public void setDepth(int depth) {
 		this.depth = depth;
+	}
+
+	/**
+	 * @return the isVisited
+	 */
+	public boolean isVisited() {
+		return isVisited;
+	}
+
+	/**
+	 * @param isVisited the isVisited to set
+	 */
+	public void setVisited(boolean isVisited) {
+		this.isVisited = isVisited;
 	}
 }

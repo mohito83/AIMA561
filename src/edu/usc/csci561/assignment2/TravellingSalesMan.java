@@ -19,6 +19,7 @@ import java.util.Map;
 
 import edu.usc.csci561.data.Edge;
 import edu.usc.csci561.data.MSTState;
+import edu.usc.csci561.data.Node;
 import edu.usc.csci561.data.State;
 import edu.usc.csci561.data.TSPNode;
 
@@ -37,7 +38,7 @@ public class TravellingSalesMan {
 
 	private static FileWriter outputPath;
 	private static FileWriter outputLog;
-	
+
 	private static List edges = new ArrayList();
 
 	private static Comparator nameComp = new Comparator() {
@@ -61,6 +62,16 @@ public class TravellingSalesMan {
 			} else {
 				return 1;
 			}
+		}
+	};
+
+	private static Comparator edgeComp = new Comparator() {
+
+		public int compare(Object o1, Object o2) {
+			Edge e1 = (Edge) o1;
+			Edge e2 = (Edge) o2;
+			return e1.getCost() - e2.getCost() == 0 ? 0 : e1.getCost()
+					- e2.getCost() > 0 ? 1 : -1;
 		}
 	};
 
@@ -115,7 +126,7 @@ public class TravellingSalesMan {
 					// populate the Graph
 					src.addChild(dest, dest.getDistance());
 					dest.addChild(src, dest.getDistance());
-					edges.add(new Edge(src,dest, dest.getDistance()));
+					edges.add(new Edge(src, dest, dest.getDistance()));
 
 					// reset the grid
 					resetGrid();
@@ -166,22 +177,46 @@ public class TravellingSalesMan {
 
 		while (!q.isEmpty()) {
 			TSPNode u = (TSPNode) q.removeFirst();
-			MSTState state = new MSTState(u);
-			state.setVisitedNodes(visited);
 			
+			MSTState state = new MSTState(src);
 			heuresticFuncMST(state, src);
-			u.setMSTVisited(true);
-			
-			tour.append(u.getName());
+			src.setMSTVisited(true);
+			src.setHeuristic(state.getH());
+			src.setTotalDistance(src.getDistance() + state.getH());
+			tour.append(src.getName());
 
 			outputLog.write(tour.toString() + "," + u.getDistance() + ","
 					+ u.getHeuristic() + "," + u.getTotalDistance());
 			outputLog.write(System.getProperty("line.separator"));
 			outputPath.write(u.getName());
 			outputPath.write(System.getProperty("line.separator"));
-			
-			
-			
+
+			visited.add(u);
+			resetEdges();
+			Map unvisited = u.getUnvisitedMSTNodes();
+
+			Iterator iter = unvisited.keySet().iterator();
+			while (iter.hasNext()) {
+				TSPNode key = (TSPNode) iter.next();
+				state = new MSTState(key);
+				double d = getEdgeCost(u, key);
+				heuresticFuncMST(state, src);
+				key.setMSTVisited(true);
+				key.setHeuristic(state.getH());
+				key.setDistance(d+u.getDistance());
+				key.setTotalDistance(key.getDistance() + state.getH());
+				q.addLast(key);
+			}
+		}
+	}
+
+	private static void resetEdges() {
+		Iterator iter = edges.iterator();
+		while (iter.hasNext()) {
+			Edge e = (Edge) iter.next();
+			e.setUsed(false);
+			e.getA().setVisited(false);
+			e.getB().setVisited(false);
 		}
 	}
 
@@ -284,8 +319,9 @@ public class TravellingSalesMan {
 	 * @param state
 	 * @return
 	 */
-	private static double heuresticFuncMST(MSTState state, TSPNode start) {
-		//TSPNode node = state.getCurrent();
+	private static void heuresticFuncMST(MSTState state, TSPNode start) {
+
+		// TSPNode node = state.getCurrent();
 		List visited = state.getVisitedNodes();
 		List unVisited = new ArrayList();
 
@@ -302,41 +338,50 @@ public class TravellingSalesMan {
 			}
 			unVisited.add(n);
 		}
-		//unVisited.add(node);
-		//unVisited.remove(start);
+		// unVisited.add(node); //unVisited.remove(start);
 
 		List vNew = new ArrayList();
 		double h = 0.0;
 		int i = 0;
 		vNew.add(start);
+		List mstEdges = new ArrayList();
 
 		while (vNew.size() != unVisited.size()) {
 			TSPNode u = (TSPNode) vNew.get(i);
-			Map nodes = u.getUnvisitedMSTNodes();
+			u.setVisited(true);
+			iter = edges.iterator();
 
-			double d = Double.POSITIVE_INFINITY;
-			TSPNode x = null;
-			iter = nodes.keySet().iterator();
 			while (iter.hasNext()) {
-				TSPNode nx = (TSPNode) iter.next();
-				if (!vNew.contains(nx)) {
-					Double val = (Double) nodes.get(nx);
-					if (val.doubleValue() < d) {
-						d = val.doubleValue();
-						x = nx;
-					}
+				Edge e = (Edge) iter.next();
+				if (e.isInEdge(u) && !e.isUsed() && !mstEdges.contains(e)) {
+					mstEdges.add(e);
+				}
+			}
+			Collections.sort(mstEdges, edgeComp);
+
+			// normalize the edge list
+			Edge m = null;
+			while (true) {
+				Edge del = (Edge) mstEdges.remove(0);
+				if (!del.getA().isVisited() || !del.getB().isVisited()) {
+					h += del.getCost();
+					del.setUsed(true);
+					m = del;
+					break;
 				}
 			}
 
-			h += d;
-			vNew.add(x);
+			if (!vNew.contains(m.getA()))
+				vNew.add(m.getA());
+			else
+				vNew.add(m.getB());
+
 			i++;
 		}
 
 		state.setH(h);
-		System.out.println("State==>"+state.getH());
+		System.out.println("State==>" + state.getH());
 
-		return 0.0;
 	}
 
 	/**
@@ -467,4 +512,16 @@ public class TravellingSalesMan {
 				+ outputLogFile);
 	}
 
+	private static double getEdgeCost(Node a, Node b) {
+		double cost = 0.0;
+		Iterator iter = edges.iterator();
+		while (iter.hasNext()) {
+			Edge e = (Edge) iter.next();
+			if (e.isTuple(a, b)) {
+				cost = e.getCost();
+				break;
+			}
+		}
+		return cost;
+	}
 }

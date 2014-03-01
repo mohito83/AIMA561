@@ -11,6 +11,8 @@ public class Edge {
 
 	private Node a, b;
 	private double cost;
+	private boolean isUsed;
+	private boolean isA, isB;
 
 	public Edge(Node a, Node b, double cost) {
 		this.a = a;
@@ -54,5 +56,29 @@ public class Edge {
 
 	public String toString() {
 		return "(" + a.getName() + ", " + b.getName() + ", " + cost + ")";
+	}
+
+	/**
+	 * @return the isUsed
+	 */
+	public boolean isUsed() {
+		isUsed = isUsed || (a.isVisited() && b.isVisited());
+		return isUsed;
+	}
+
+	/**
+	 * @param isUsed
+	 *            the isUsed to set
+	 */
+	public void setUsed(boolean isUsed) {
+		this.isUsed = isUsed;
+	}
+
+	public boolean isInEdge(Node n) {
+		isA = n.getName().equals(a.getName());
+		isB = n.getName().equals(b.getName());
+		/*a.setVisited(isA);
+		b.setVisited(isB);*/
+		return isA || isB;
 	}
 }
