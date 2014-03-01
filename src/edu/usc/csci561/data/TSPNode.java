@@ -4,6 +4,7 @@
 package edu.usc.csci561.data;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -31,7 +32,7 @@ public class TSPNode extends Node {
 		right = null;
 		top = null;
 		bottom = null;
-		heuristic = 0.0;
+		heuristic = Double.POSITIVE_INFINITY;
 		totalDistance = 0.0;
 		children = new HashMap();
 		isMSTVisited = false;
@@ -63,15 +64,27 @@ public class TSPNode extends Node {
 		return nodes;
 	}
 
-	public Map getUnvisitedMSTNodes() {
-		Map nodes = new HashMap();
-		Iterator iter = children.keySet().iterator();
+	public List getUnvisitedMSTNodes() {
+		List nodes = new ArrayList();
+		List values = new ArrayList(children.values());
+		Collections.sort(values);
+
+		Iterator iter = values.iterator();
 		while (iter.hasNext()) {
-			TSPNode n = (TSPNode) iter.next();
-			if (!n.isMSTVisited()) {
-				nodes.put(n, children.get(n));
+			Double d = (Double) iter.next();
+
+			Iterator iter1 = children.keySet().iterator();
+			while (iter1.hasNext()) {
+				TSPNode key = (TSPNode) iter1.next();
+				Double v = (Double) children.get(key);
+				if (d.doubleValue() == v.doubleValue()) {
+					if (!key.isMSTVisited() && !nodes.contains(key)) {
+						nodes.add(key);
+					}
+				}
 			}
 		}
+
 		return nodes;
 	}
 

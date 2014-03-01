@@ -3,8 +3,6 @@
  */
 package edu.usc.csci561.data;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author mohit aggarwl

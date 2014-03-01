@@ -15,7 +15,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import edu.usc.csci561.data.Edge;
 import edu.usc.csci561.data.MSTState;
@@ -168,45 +167,68 @@ public class TravellingSalesMan {
 	private static void solveTSP(TSPNode src) throws IOException {
 
 		LinkedList q = new LinkedList();
-		List visited = new ArrayList();
 
 		src.setDistance(0.0);
 		src.setState(State.GREY);
 		q.addLast(src);
-		StringBuffer tour = new StringBuffer();
+
+		MSTState state = new MSTState(src);
+		heuresticFuncMST(state, src);
+		src.setMSTVisited(true);
+		src.setHeuristic(state.getH());
+		src.setTotalDistance(src.getDistance() + state.getH());
+
+		double cost = 0.0, d = 0.0;
 
 		while (!q.isEmpty()) {
 			TSPNode u = (TSPNode) q.removeFirst();
-
-			MSTState state = new MSTState(u);
-			heuresticFuncMST(state, u);
 			u.setMSTVisited(true);
-			u.setHeuristic(state.getH());
-			u.setTotalDistance(u.getDistance() + state.getH());
-			tour.append(u.getName());
 
-			outputLog.write(tour.toString() + "," + u.getDistance() + ","
+			outputLog.write(getTour(u) + "," + u.getDistance() + ","
 					+ u.getHeuristic() + "," + u.getTotalDistance());
 			outputLog.write(System.getProperty("line.separator"));
 			outputPath.write(u.getName());
 			outputPath.write(System.getProperty("line.separator"));
 
-			resetEdges();
-			Map unvisited = u.getUnvisitedMSTNodes();
+			List unvisited = u.getUnvisitedMSTNodes();
 
-			Iterator iter = unvisited.keySet().iterator();
+			Iterator iter = unvisited.iterator();
 			while (iter.hasNext()) {
+				resetEdges();
 				TSPNode key = (TSPNode) iter.next();
 				state = new MSTState(key);
-				double d = getEdgeCost(u, key);
 				heuresticFuncMST(state, src);
-				key.setMSTVisited(true);
-				key.setHeuristic(state.getH());
-				key.setDistance(d + u.getDistance());
-				key.setTotalDistance(key.getDistance() + state.getH());
-				q.addLast(key);
+				cost = u.getDistance() + getEdgeCost(u, key);
+				d = state.getH();
+				if (d <= key.getHeuristic()) {
+					key.setParent(u);
+					key.setHeuristic(state.getH());
+					key.setDistance(cost);
+					key.setTotalDistance(key.getDistance() + state.getH());
+					if (!q.contains(key)) {
+						q.addLast(key);
+					}
+				}
 			}
+
+			Collections.sort(q, totalCostComp);
 		}
+	}
+
+	/**
+	 * This method prints the tour of the node in the MST
+	 * 
+	 * @param u
+	 * @return
+	 */
+	private static String getTour(TSPNode u) {
+		StringBuffer buff = new StringBuffer();
+		Node p = u;
+		while (p != null) {
+			buff.append(p.getName());
+			p = p.getParent();
+		}
+		return buff.reverse().toString();
 	}
 
 	private static void resetEdges() {
@@ -292,7 +314,7 @@ public class TravellingSalesMan {
 					grid[i][j].setDepth(0);
 					grid[i][j].setState(State.WHITE);
 					grid[i][j].setDistance(Double.POSITIVE_INFINITY);
-					grid[i][j].setHeuristic(0.0);
+					grid[i][j].setHeuristic(Double.POSITIVE_INFINITY);
 					grid[i][j].setTotalDistance(0.0);
 				}
 			}
@@ -320,14 +342,19 @@ public class TravellingSalesMan {
 	 */
 	private static void heuresticFuncMST(MSTState state, TSPNode start) {
 		List unVisited = new ArrayList();
+		TSPNode current = state.getCurrent();
+		unVisited.add(current);
 
 		// find unvisited nodes
 		Iterator iter = posts.iterator();
 		while (iter.hasNext()) {
 			TSPNode n = (TSPNode) iter.next();
-			if (!n.isMSTVisited()) {
+			if (!n.isMSTVisited() && !unVisited.contains(n)) {
 				unVisited.add(n);
 			}
+		}
+		if (!unVisited.contains(start)) {
+			unVisited.add(start);
 		}
 
 		List vNew = new ArrayList();
@@ -339,7 +366,7 @@ public class TravellingSalesMan {
 		while (vNew.size() != unVisited.size()) {
 			TSPNode u = (TSPNode) vNew.get(i);
 			u.setVisited(true);
-			iter = edges.iterator();
+			iter = getPrunedEdges(start).iterator();
 
 			while (iter.hasNext()) {
 				Edge e = (Edge) iter.next();
@@ -351,7 +378,8 @@ public class TravellingSalesMan {
 
 			// normalize the edge list
 			Edge m = null;
-			while (true) {
+			int size = mstEdges.size();
+			while (size > 0) {
 				Edge del = (Edge) mstEdges.remove(0);
 				if (!del.getA().isVisited() || !del.getB().isVisited()) {
 					h += del.getCost();
@@ -359,6 +387,7 @@ public class TravellingSalesMan {
 					m = del;
 					break;
 				}
+				size--;
 			}
 
 			if (!vNew.contains(m.getA()))
@@ -372,6 +401,34 @@ public class TravellingSalesMan {
 		state.setH(h);
 		System.out.println("State==>" + state.getH());
 
+	}
+
+	private static List getPrunedEdges(TSPNode src) {
+		List result = new ArrayList();
+		List visited = getVisitedPosts();
+		visited.remove(src);
+
+		Iterator iter = edges.iterator();
+		while (iter.hasNext()) {
+			Edge e = (Edge) iter.next();
+			if (!visited.contains(e.getA()) && !visited.contains(e.getB())) {
+				result.add(e);
+			}
+		}
+
+		return result;
+	}
+
+	private static List getVisitedPosts() {
+		List result = new ArrayList();
+		Iterator iter = posts.iterator();
+		while (iter.hasNext()) {
+			TSPNode n = (TSPNode) iter.next();
+			if (n.isMSTVisited()) {
+				result.add(n);
+			}
+		}
+		return result;
 	}
 
 	/**
